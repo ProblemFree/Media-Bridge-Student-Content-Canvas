@@ -5,50 +5,54 @@
 // - A message in the bottom 30% that auto-scales its font size to fit the container.
 
 import React from 'react';
-import { Card, CardHeader, Box } from '@mui/material';
+import { Card, Box } from '@mui/material';
 import AutoScaleText from './AutoScaleText';
 
 const PostCard = ({ fileUrl, message, userId, fileName }) => {
   return (
     <Card sx={{ width: 350, height: 350, position: 'relative' }}>
-      {/* Header displaying the userID */}
-      <CardHeader 
-        title={`${userId} says...`}
-        sx={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          backgroundColor: 'rgba(255,255,255,0.8)', 
-          padding: '4px 8px', 
-          zIndex: 1 
-        }}
-      />
-      
-      {/* Image container: occupies the top 70% */}
-      <Box 
+      {/* Image container: occupies top 70% of the card */}
+      <Box
         sx={{
           height: '70%',
           width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'hidden',
-          mt: '40px' // leave space for header
+          position: 'relative',
+          overflow: 'hidden'
         }}
       >
-        <img 
-          src={fileUrl} 
-          alt={fileName || 'Uploaded content'} 
-          style={{ 
-            maxHeight: '100%', 
-            maxWidth: '100%', 
-            objectFit: 'contain'  // Ensures the image is scaled proportionally without cropping
-          }} 
+        <img
+          src={fileUrl}
+          alt={fileName || 'Uploaded content'}
+          style={{
+            maxHeight: '100%',
+            maxWidth: '100%',
+            objectFit: 'contain' // Ensures proportional scaling without cropping
+          }}
         />
+        {/* Tag overlay in the top left corner */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 8,
+            left: 8,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            color: '#fff',
+            padding: '4px 8px',
+            borderRadius: '16px',
+            maxWidth: '90%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <AutoScaleText minFontSize={10} maxFontSize={16} style={{ margin: 0 }}>
+            {userId} says...
+          </AutoScaleText>
+        </Box>
       </Box>
       
-      {/* Message container: occupies the bottom 30% */}
-      <Box 
+      {/* Message container: occupies bottom 30% of the card */}
+      <Box
         sx={{
           height: '30%',
           width: '100%',
@@ -59,7 +63,6 @@ const PostCard = ({ fileUrl, message, userId, fileName }) => {
           justifyContent: 'center'
         }}
       >
-        {/* AutoScaleText adjusts font size so the message fits within the container */}
         <AutoScaleText minFontSize={12} maxFontSize={24}>
           {message}
         </AutoScaleText>

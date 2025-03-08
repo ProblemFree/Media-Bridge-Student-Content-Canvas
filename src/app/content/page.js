@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, db, query, where, onSnapshot } from '/lib/firebaseConfig';
 import { Container, Grid2, Typography} from '@mui/material';
-import PostCard from '/src/components/PostCard';
+import CardRain from '/src/components/CardRain';
 
 const ContentStream = () => {
   const [contentItems, setContentItems] = useState([]);
@@ -33,23 +33,22 @@ const ContentStream = () => {
     return () => unsubscribe();
   }, []);
 
+  
   return (
-    <Container>
-      <Typography variant="h4" component="h1" gutterBottom>
+    <Container maxWidth={false} disableGutters>
+      {/* Header */}
+      <Typography 
+        variant="h4" 
+        component="h1" 
+        align="center" 
+        gutterBottom 
+        sx={{ marginTop: '20px' }}
+      >
         Content Stream
       </Typography>
-      <Grid2 container spacing={2}>
-        {contentItems.map(item => (
-          <Grid2 item key={item.id}>
-            <PostCard 
-              fileUrl={item.fileUrl} 
-              message={item.message} 
-              userId={item.userId}
-              fileName={item.fileName}
-            />
-          </Grid2>
-        ))}
-      </Grid2>
+
+      {/* CardRain component for continuous card rain effect */}
+      <CardRain posts={contentItems} />
     </Container>
   );
 };
