@@ -1,17 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import { db, collection, getDocs, query, where, updateDoc, deleteDoc, doc } from "/lib/firebaseConfig";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Modal from "/Components/Modal";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
-import CardActionArea from '@mui/material/CardActionArea';
 import CardActions from '@mui/material/CardActions';
 import IconButton from '@mui/material/IconButton';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
+import Button from '@mui/material/Button';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 export default function Dashboard() {
   const [submissions, setSubmissions] = useState([]);
@@ -70,10 +70,10 @@ export default function Dashboard() {
     
   }
 
-  function SubmissionPreview({fileUrl, message, id}) 
+  function SubmissionPreview({fileUrl, message, id, accepted}) 
   {
     return (
-      <Card sx={{ flexBasis: "24%", height:"380px" }}>
+      <Card sx={{ flexBasis: "24%", height: !accepted ? "380px" : "330px" }}>
           <CardMedia
             component="img"
             height="250"
@@ -86,6 +86,7 @@ export default function Dashboard() {
               {message}
             </Typography>
           </CardContent>
+          { !accepted ?
           <CardActions sx={{display:"flex", justifyContent:"center"}}>
             <IconButton aria-label="delete" size="large" color="warning" onClick={()=>{ChangeSubmissionStatus(false, id)}}>
               <HighlightOffIcon fontSize="large" color="warning"/>
@@ -94,18 +95,31 @@ export default function Dashboard() {
               <CheckCircleOutlineIcon fontSize="large" color="success"/>
             </IconButton>
           </CardActions>
+          :
+          <></>
+          }
       </Card>
     );
   }
 
   return (
-    <div style={{width: "100%", height:"100%"}}>
-      <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", padding: "20px"}}>
-        {submissions.map((submission)=>(
-          <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id}/>
+    <div style={{width: "100%", height:"100%",  padding: "20px"}}>
+      <h1>Pending</h1>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", paddingTop: "20px", paddingBottom: "20px"}}>
+        {submissions.filter((submission) => submission.accepted === false).map((submission)=>(
+          <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id} accepted={submission.accepted}/>
+        ))}
+      </div>
+      <h1>Accepted</h1>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", paddingTop: "20px", paddingBottom: "20px"}}>
+        {submissions.filter((submission) => submission.accepted === true).map((submission)=>(
+          <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id} accepted={submission.accepted}/>
         ))}
       </div>
       <Modal isVisible={isModalOpen} setVisible={() => setIsModalOpen(false)} response={modalResponse} color={modalColor}/>
+      <Button sx={{position: "fixed", bottom: 30, right: 35}} variant="contained" endIcon={<RefreshIcon />} onClick={()=>LoadSubmissions()}>
+        Refresh Submissions
+      </Button>
     </div>
     
   );

@@ -7,7 +7,7 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
 export default function Modal({isVisible, setVisible, response, color}) {
     return (
-        <div style={{position: "absolute", left:"calc(50% - 140px)", top: "90%"}}>
+        <div style={{position: "fixed", left:"calc(50% - 140px)", top: "90%"}}>
             <AnimatePresence initial={false}>
                 {isVisible ? (
                     <motion.div
