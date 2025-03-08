@@ -25,9 +25,12 @@ export default function Home() {
 
       // Store file URL in Firestore
       await addDoc(collection(db, "uploads"), {
+        userId: "temp",
+        message: "hello world",
         fileName: image.name,
         fileUrl: url,
         timestamp: new Date(),
+        accepted: false,
       });
 
       alert("Image uploaded & stored in Firestore!");

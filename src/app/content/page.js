@@ -1,24 +1,56 @@
 "use client";
-import { useState, useEffect } from "react";
-import { storage, db, collection, addDoc } from "/lib/firebaseConfig";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import React, { useState, useEffect } from 'react';
+import { collection, db, query, where, onSnapshot } from '/lib/firebaseConfig';
+import { Container, Grid2, Typography} from '@mui/material';
+import CardRain from '/src/components/CardRain';
 
-export default function Content() {
-  const [accepted, getAccepted] = useState([]);
+const ContentStream = () => {
+  const [contentItems, setContentItems] = useState([]);
 
+  useEffect(() => {
+    // Create a Firestore query for submissions where "accepted" is true
+    const submissionsRef = collection(db, 'uploads');
+    const acceptedQuery = query(submissionsRef, where('accepted', '==', true));
+
+    // Set up a real-time listener for the query
+    const unsubscribe = onSnapshot(
+      acceptedQuery,
+      (querySnapshot) => {
+        const items = [];
+        querySnapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        // Optionally, sort items by timestamp (newest first)
+        items.sort((a, b) => b.timestamp - a.timestamp);
+        setContentItems(items);
+      },
+      (error) => {
+        console.error("Error fetching content:", error);
+      }
+    );
+
+    // Clean up the listener on unmount
+    return () => unsubscribe();
+  }, []);
+
+  
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h1>Upload File & Store in Firestore</h1>
+    <Container maxWidth={false} disableGutters>
+      {/* Header */}
+      <Typography 
+        variant="h4" 
+        component="h1" 
+        align="center" 
+        gutterBottom 
+        sx={{ marginTop: '20px' }}
+      >
+        Content Stream
+      </Typography>
 
-      <input type="file" onChange={handleFileChange} />
-      <button onClick={handleUpload} style={{ marginLeft: "10px" }}>Upload</button>
-
-      {imageUrl && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Uploaded File:</h3>
-          <img src={imageUrl} alt="Uploaded" width="300" />
-        </div>
-      )}
-    </div>
+      {/* CardRain component for continuous card rain effect */}
+      <CardRain posts={contentItems} />
+    </Container>
   );
-}
+};
+
+export default ContentStream;
