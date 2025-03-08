@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { collection, db, query, where, onSnapshot } from '/lib/firebaseConfig';
-import { Container, Grid2, Card, CardContent, CardMedia, Typography, CardActions, Button } from '@mui/material';
+import { Container, Grid2, Typography} from '@mui/material';
+import PostCard from '/src/components/PostCard';
 
 const ContentStream = () => {
   const [contentItems, setContentItems] = useState([]);
@@ -9,7 +10,7 @@ const ContentStream = () => {
   useEffect(() => {
     // Create a Firestore query for submissions where "accepted" is true
     const submissionsRef = collection(db, 'uploads');
-    const acceptedQuery = query(submissionsRef, where('accepted', '==', false));
+    const acceptedQuery = query(submissionsRef, where('accepted', '==', true));
 
     // Set up a real-time listener for the query
     const unsubscribe = onSnapshot(
@@ -33,28 +34,22 @@ const ContentStream = () => {
   }, []);
 
   return (
-    <Container style={{display: "flex"}}>
+    <Container>
       <Typography variant="h4" component="h1" gutterBottom>
         Content Stream
       </Typography>
+      <Grid2 container spacing={2}>
         {contentItems.map(item => (
-          <Card key={item.id} sx={{ flexBasis: "24%", maxWidth: 350, height: 350, marginBottom: 2}}>
-            <CardMedia 
-              sx={{ objectFit: "contain" }} height="250">
-              {item.fileUrl && (
-                <img 
-                  src={item.fileUrl} 
-                  alt={item.fileName || 'Uploaded content'}
-                />
-              )}
-            </CardMedia>
-            <CardContent>
-              <Typography variant="caption" color="text.secondary">
-                {item.message}
-              </Typography>
-            </CardContent>
-          </Card>
+          <Grid2 item key={item.id}>
+            <PostCard 
+              fileUrl={item.fileUrl} 
+              message={item.message} 
+              userId={item.userId}
+              fileName={item.fileName}
+            />
+          </Grid2>
         ))}
+      </Grid2>
     </Container>
   );
 };
