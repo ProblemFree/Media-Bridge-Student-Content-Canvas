@@ -1,38 +1,15 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { storage, db, collection, addDoc } from "/lib/firebaseConfig";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-export default function Home() {
-  const [image, setImage] = useState(null);
+export default function Dashboard() {
+  const [submissions, setSubmissions] = useState([]);
   const [imageUrl, setImageUrl] = useState("");
 
   const handleFileChange = (event) => {
     if (event.target.files[0]) {
       setImage(event.target.files[0]);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!image) return;
-
-    const imageRef = ref(storage, `images/${image.name}`);
-
-    try {
-      await uploadBytes(imageRef, image);
-      const url = await getDownloadURL(imageRef);
-      setImageUrl(url);
-
-      // Store file URL in Firestore
-      await addDoc(collection(db, "uploads"), {
-        fileName: image.name,
-        fileUrl: url,
-        timestamp: new Date(),
-      });
-
-      alert("Image uploaded & stored in Firestore!");
-    } catch (error) {
-      console.error("Error uploading file:", error);
     }
   };
 
