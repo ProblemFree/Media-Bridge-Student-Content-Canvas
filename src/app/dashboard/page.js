@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { db, collection, getDocs, query, where, updateDoc, deleteDoc, doc } from "/lib/firebaseConfig";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import Modal from "/Components/Modal";
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
@@ -14,6 +15,11 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
 export default function Dashboard() {
   const [submissions, setSubmissions] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalColor, setModalColor] = useState("#2e7d32");
+  const [modalResponse, setModalResponse] = useState("");
+
+
 
   async function LoadSubmissions()
   {
@@ -33,23 +39,35 @@ export default function Dashboard() {
   useEffect(()=>{
     LoadSubmissions();
   }, [])
-
   async function ChangeSubmissionStatus(status, submissionId)
   {
     const document = doc(db, "uploads", submissionId);
     //Submission accepted so set to true in db
-    if(status)
-    {
-      await updateDoc(document, {
-        accepted: status
-      });
+    try{
+      if(status)
+        {
+          await updateDoc(document, {
+            accepted: status
+          });
+          setModalResponse("Submission successfully approved.");
+        }
+        //Submission not accepted so delete in db
+        else
+        {
+          await deleteDoc(document);
+          setModalResponse("Submission successfully rejected.");
+        }
+        setModalColor("#2e7d32");
+        setIsModalOpen(true);
+        LoadSubmissions();
+    } 
+    catch (error) {
+      setModalResponse(`Error performing operation. ${error}`);
+      setModalColor("#ed6c02");
+      setIsModalOpen(true);
+      throw error;
     }
-    //Submission not accepted so delete in db
-    else
-    {
-      await deleteDoc(document);
-    }
-    LoadSubmissions();
+    
   }
 
   function SubmissionPreview({fileUrl, message, id}) 
@@ -79,11 +97,16 @@ export default function Dashboard() {
       </Card>
     );
   }
+
   return (
-    <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", padding: "20px"}}>
-      {submissions.map((submission)=>(
-         <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id}/>
-      ))}
+    <div style={{width: "100%", height:"100%"}}>
+      <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", padding: "20px"}}>
+        {submissions.map((submission)=>(
+          <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id}/>
+        ))}
+      </div>
+      <Modal isVisible={isModalOpen} setVisible={() => setIsModalOpen(false)} response={modalResponse} color={modalColor}/>
     </div>
+    
   );
 }
