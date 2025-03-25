@@ -1,72 +1,125 @@
-// PostCard.jsx
-// Renders a card (350x350 pixels) with:
-// - A header at the top-left that says "userID says..."
-// - An image (from fileUrl) that fills the top 70% of the card, scaled proportionally without cropping.
-// - A message in the bottom 30% that auto-scales its font size to fit the container.
+import React, { useRef, useEffect, useState } from 'react';
+import { Card, Box, Typography } from '@mui/material';
 
-import React from 'react';
-import { Card, Box } from '@mui/material';
-import AutoScaleText from './AutoScaleText';
+const PostCard = ({ fileUrl, message, userId }) => {
+  const hasImage = Boolean(fileUrl);
+  const hasText = Boolean(message?.trim());
+  const textRef = useRef(null);
+  const [fontSize, setFontSize] = useState(24);
 
-const PostCard = ({ fileUrl, message, userId, fileName }) => {
+  useEffect(() => {
+    if (textRef.current) {
+      let newFontSize = 24;
+      const containerHeight = textRef.current.parentElement.clientHeight;
+      while (textRef.current.scrollHeight > containerHeight && newFontSize > 12) {
+        newFontSize -= 1;
+        textRef.current.style.fontSize = `${newFontSize}px`;
+      }
+      setFontSize(newFontSize);
+    }
+  }, [message]);
+
   return (
-    <Card sx={{ width: 350, height: 350, position: 'relative' }}>
-      {/* Image container: occupies top 70% of the card */}
+    <Card
+      sx={{
+        width: 350,
+        height: 350,
+        position: 'relative',
+        backgroundColor: '#1e293b',
+        color: '#e2e8f0',
+        display: 'flex',
+        flexDirection: 'column',
+        borderRadius: '16px',
+        boxShadow: 3,
+        overflow: 'hidden' // ensures children like images don’t escape the rounded border
+      }}
+    >
+      {/* User ID Tag */}
       <Box
         sx={{
-          height: '70%',
-          width: '100%',
-          position: 'relative',
-          overflow: 'hidden'
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          color: '#fff',
+          padding: '4px 8px',
+          borderRadius: '16px',
+          maxWidth: '90%',
+          fontSize: '12px',
+          zIndex: 1
         }}
       >
-        <img
-          src={fileUrl}
-          alt={fileName || 'Uploaded content'}
-          style={{
-            maxHeight: '100%',
-            maxWidth: '100%',
-            objectFit: 'contain' // Ensures proportional scaling without cropping
-          }}
-        />
-        {/* Tag overlay in the top left corner */}
+        <Typography variant="caption">{userId} says...</Typography>
+      </Box>
+
+      {/* Image + Text Layout */}
+      {hasImage && hasText ? (
+        <>
+          {/* Image Section */}
+          <Box sx={{ height: '70%', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+            <img
+              src={fileUrl}
+              alt="Uploaded content"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'contain'
+              }}
+            />
+          </Box>
+
+          {/* Text Section */}
+          <Box
+            sx={{
+              height: '30%',
+              width: '100%',
+              padding: '8px',
+              backgroundColor: '#334155',
+              borderTop: '1px solid #475569',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center'
+            }}
+          >
+            <Typography ref={textRef} sx={{ fontSize: `${fontSize}px`, wordWrap: 'break-word' }}>
+              {message}
+            </Typography>
+          </Box>
+        </>
+      ) : hasImage ? (
+        // Image Only
+        <Box sx={{ height: '100%', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+          <img
+            src={fileUrl}
+            alt="Uploaded content"
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+        </Box>
+      ) : (
+        // Text Only
         <Box
           sx={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            backgroundColor: 'rgba(0, 0, 0, 0.7)',
-            color: '#fff',
-            padding: '4px 8px',
-            borderRadius: '16px',
-            maxWidth: '90%',
+            height: '100%',
+            width: '100%',
+            padding: '12px',
+            backgroundColor: '#334155',
+            border: '1px solid #475569',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center'
+            justifyContent: 'center',
+            textAlign: 'center'
           }}
         >
-          <AutoScaleText minFontSize={10} maxFontSize={16} style={{ margin: 0 }}>
-            {userId} says...
-          </AutoScaleText>
+          <Typography ref={textRef} sx={{ fontSize: `${fontSize}px`, wordWrap: 'break-word' }}>
+            {message}
+          </Typography>
         </Box>
-      </Box>
-      
-      {/* Message container: occupies bottom 30% of the card */}
-      <Box
-        sx={{
-          height: '30%',
-          width: '100%',
-          padding: '8px',
-          boxSizing: 'border-box',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <AutoScaleText minFontSize={12} maxFontSize={24}>
-          {message}
-        </AutoScaleText>
-      </Box>
+      )}
     </Card>
   );
 };

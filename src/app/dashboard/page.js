@@ -1,126 +1,175 @@
 "use client";
+
 import { useState, useEffect } from "react";
-import { db, collection, getDocs, query, where, updateDoc, deleteDoc, doc } from "/lib/firebaseConfig";
-import Modal from "/Components/Modal";
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import Typography from '@mui/material/Typography';
-import CardActions from '@mui/material/CardActions';
-import IconButton from '@mui/material/IconButton';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import Button from '@mui/material/Button';
-import RefreshIcon from '@mui/icons-material/Refresh';
+import {
+  db,
+  collection,
+  query,
+  getDocs,
+  updateDoc,
+  doc,
+} from "/lib/firebaseConfig";
+import PostCard from "../../components/PostCard";
+import {
+  Box,
+  Typography,
+  Select,
+  MenuItem,
+  Button,
+  Checkbox,
+  TextField,
+  Card,
+  CardActions,
+  CardContent,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 export default function Dashboard() {
   const [submissions, setSubmissions] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalColor, setModalColor] = useState("#2e7d32");
-  const [modalResponse, setModalResponse] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState("all");
 
+  useEffect(() => {
+    LoadSubmissions();
+  }, []);
 
-
-  async function LoadSubmissions()
-  {
+  async function LoadSubmissions() {
     const q = query(collection(db, "uploads"));
     const querySnapshot = await getDocs(q);
-    let queryResults = []
+    let queryResults = [];
     querySnapshot.forEach((doc) => {
       let obj = doc.data();
       obj.id = doc.id;
       queryResults.push(obj);
-      // console.log(doc.id, " => ", doc.data());
     });
-    console.log(queryResults);
-    setSubmissions(queryResults)
+    setSubmissions(queryResults);
   }
 
-  useEffect(()=>{
-    LoadSubmissions();
-  }, [])
-  async function ChangeSubmissionStatus(status, submissionId)
-  {
-    const document = doc(db, "uploads", submissionId);
-    //Submission accepted so set to true in db
-    try{
-      if(status)
-        {
-          await updateDoc(document, {
-            accepted: status
-          });
-          setModalResponse("Submission successfully approved.");
-        }
-        //Submission not accepted so delete in db
-        else
-        {
-          await deleteDoc(document);
-          setModalResponse("Submission successfully rejected.");
-        }
-        setModalColor("#2e7d32");
-        setIsModalOpen(true);
-        LoadSubmissions();
-    } 
-    catch (error) {
-      setModalResponse(`Error performing operation. ${error}`);
-      setModalColor("#ed6c02");
-      setIsModalOpen(true);
-      throw error;
-    }
-    
-  }
-
-  function SubmissionPreview({fileUrl, message, id, accepted}) 
-  {
-    return (
-      <Card sx={{ flexBasis: "24%", height: !accepted ? "380px" : "330px" }}>
-          <CardMedia
-            component="img"
-            height="250"
-            src= {fileUrl}
-            alt= {fileUrl}
-            sx={{ padding: "1em 1em 0 1em", objectFit: "contain" }}
-          />
-          <CardContent sx={{height:"50px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", marginTop: "10px"}}>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {message}
-            </Typography>
-          </CardContent>
-          { !accepted ?
-          <CardActions sx={{display:"flex", justifyContent:"center"}}>
-            <IconButton aria-label="delete" size="large" color="warning" onClick={()=>{ChangeSubmissionStatus(false, id)}}>
-              <HighlightOffIcon fontSize="large" color="warning"/>
-            </IconButton>
-            <IconButton aria-label="confirm" size="large" color="success"  onClick={()=>{ChangeSubmissionStatus(true, id)}}>
-              <CheckCircleOutlineIcon fontSize="large" color="success"/>
-            </IconButton>
-          </CardActions>
-          :
-          <></>
-          }
-      </Card>
+  const updateStatus = async (id, status) => {
+    await updateDoc(doc(db, "uploads", id), { accepted: status });
+    setSubmissions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, accepted: status } : s))
     );
-  }
+  };
+
+  const handleBatchUpdate = async (status) => {
+    await Promise.all(selectedIds.map((id) => updateStatus(id, status)));
+    setSelectedIds([]);
+  };
+
+  const filtered = submissions.filter((s) => {
+    if (filterType !== "all" && s.postType !== filterType) return false;
+    if (search && !s.message?.toLowerCase().includes(search.toLowerCase()) && !s.userId?.includes(search)) return false;
+    return true;
+  });
+
+  const pending = filtered.filter((s) => !s.accepted);
+  const accepted = filtered.filter((s) => s.accepted);
 
   return (
-    <div style={{width: "100%", height:"100%",  padding: "20px"}}>
-      <h1>Pending</h1>
-      <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", paddingTop: "20px", paddingBottom: "20px"}}>
-        {submissions.filter((submission) => submission.accepted === false).map((submission)=>(
-          <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id} accepted={submission.accepted}/>
-        ))}
-      </div>
-      <h1>Accepted</h1>
-      <div style={{display: "flex", flexWrap: "wrap", gap: "1%", rowGap: "30px", paddingTop: "20px", paddingBottom: "20px"}}>
-        {submissions.filter((submission) => submission.accepted === true).map((submission)=>(
-          <SubmissionPreview key={submission.id} fileUrl={submission.fileUrl} message={submission.message} id={submission.id} accepted={submission.accepted}/>
-        ))}
-      </div>
-      <Modal isVisible={isModalOpen} setVisible={() => setIsModalOpen(false)} response={modalResponse} color={modalColor}/>
-      <Button sx={{position: "fixed", bottom: 30, right: 35}} variant="contained" endIcon={<RefreshIcon />} onClick={()=>LoadSubmissions()}>
-        Refresh Submissions
-      </Button>
-    </div>
-    
+    <Box sx={{ p: 4, backgroundColor: "#111827", color: "white", minHeight: "100vh" }}>
+      <Typography variant="h4" gutterBottom>Moderation Dashboard</Typography>
+
+      {/* Controls */}
+      <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+        <TextField
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search user ID or message"
+          sx={{ input: { color: "white" }, background: "#1f2937" }}
+        />
+        <Select
+          value={filterType}
+          onChange={(e) => setFilterType(e.target.value)}
+          sx={{ color: "white", background: "#1f2937" }}
+        >
+          <MenuItem value="all">All Types</MenuItem>
+          <MenuItem value="image">Only Images</MenuItem>
+          <MenuItem value="text">Only Text</MenuItem>
+          <MenuItem value="image_text">Text & Image</MenuItem>
+        </Select>
+        {selectedIds.length > 0 && (
+          <>
+            <Button onClick={() => handleBatchUpdate(true)} color="success" variant="contained">Approve Selected</Button>
+            <Button onClick={() => handleBatchUpdate(false)} sx={{ backgroundColor: "#facc15", color: "black", '&:hover': { backgroundColor: "#fde047" } }}>
+              Revert/Reject
+            </Button>
+          </>
+        )}
+      </Box>
+
+      {/* Pending Posts Section */}
+      <Accordion defaultExpanded sx={{ backgroundColor: "#1f2937", color: "white" }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}>
+          <Typography variant="h6">Pending Posts ({pending.length})</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+            {pending.map((submission) => (
+              <Card key={submission.id} sx={{ width: 350, background: "#1e293b", color: "white" }}>
+                <Checkbox
+                  checked={selectedIds.includes(submission.id)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setSelectedIds((prev) =>
+                      checked ? [...prev, submission.id] : prev.filter((id) => id !== submission.id)
+                    );
+                  }}
+                  sx={{ color: "white" }}
+                />
+                <PostCard fileUrl={submission.fileUrl} message={submission.message} userId={submission.userId || "Unknown"} />
+                <CardContent>
+                  <Typography variant="caption">
+                    {new Date(submission.timestamp?.toDate?.() || submission.timestamp).toLocaleString()}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: "center" }}>
+                  <Button color="success" variant="contained" onClick={() => updateStatus(submission.id, true)} sx={{ '&:hover': { backgroundColor: "#15803d" } }}>Approve</Button>
+                  <Button color="error" variant="contained" onClick={() => updateStatus(submission.id, false)} sx={{ '&:hover': { backgroundColor: "#dc2626" } }}>Reject</Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+
+      {/* Accepted Posts Section */}
+      <Accordion defaultExpanded sx={{ backgroundColor: "#1f2937", color: "white", mt: 4 }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}>
+          <Typography variant="h6">Accepted Posts ({accepted.length})</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+            {accepted.map((submission) => (
+              <Card key={submission.id} sx={{ width: 350, background: "#1e293b", color: "white" }}>
+                <Checkbox
+                  checked={selectedIds.includes(submission.id)}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setSelectedIds((prev) =>
+                      checked ? [...prev, submission.id] : prev.filter((id) => id !== submission.id)
+                    );
+                  }}
+                  sx={{ color: "white" }}
+                />
+                <PostCard fileUrl={submission.fileUrl} message={submission.message} userId={submission.userId || "Unknown"} />
+                <CardContent>
+                  <Typography variant="caption">
+                    {new Date(submission.timestamp?.toDate?.() || submission.timestamp).toLocaleString()}
+                  </Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: "center" }}>
+                  <Button sx={{ backgroundColor: "#facc15", color: "black", '&:hover': { backgroundColor: "#fde047" } }} onClick={() => updateStatus(submission.id, false)}>Revert</Button>
+                </CardActions>
+              </Card>
+            ))}
+          </Box>
+        </AccordionDetails>
+      </Accordion>
+    </Box>
   );
 }
