@@ -7,6 +7,7 @@ import {
   query,
   getDocs,
   updateDoc,
+  deleteDoc,
   doc,
 } from "/lib/firebaseConfig";
 import PostCard from "../../components/PostCard";
@@ -24,18 +25,29 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import useAdminAuth from "@/hooks/useAdminAuth";
 
 export default function Dashboard() {
+  const { user, isAdmin, loading } = useAdminAuth();
+
   const [submissions, setSubmissions] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
-    LoadSubmissions();
-  }, []);
+    if (isAdmin) LoadSubmissions();
+  }, [isAdmin]);
 
   async function LoadSubmissions() {
     const q = query(collection(db, "uploads"));
@@ -56,8 +68,26 @@ export default function Dashboard() {
     );
   };
 
+  const deleteSubmission = async (id) => {
+    try {
+      await deleteDoc(doc(db, "uploads", id));
+      setSubmissions((prev) => prev.filter((s) => s.id !== id));
+    } catch (err) {
+      console.error("Failed to delete submission:", err);
+    }
+  };
+
   const handleBatchUpdate = async (status) => {
-    await Promise.all(selectedIds.map((id) => updateStatus(id, status)));
+    if (status) {
+      await Promise.all(selectedIds.map((id) => updateStatus(id, true)));
+    } else {
+      // Revert if accepted, delete if pending
+      const toDelete = submissions.filter((s) => selectedIds.includes(s.id) && !s.accepted);
+      const toRevert = submissions.filter((s) => selectedIds.includes(s.id) && s.accepted);
+
+      await Promise.all(toDelete.map((s) => deleteSubmission(s.id)));
+      await Promise.all(toRevert.map((s) => updateStatus(s.id, false)));
+    }
     setSelectedIds([]);
   };
 
@@ -69,6 +99,23 @@ export default function Dashboard() {
 
   const pending = filtered.filter((s) => !s.accepted);
   const accepted = filtered.filter((s) => s.accepted);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <Box sx={{ p: 5, textAlign: "center" }}>
+        <Typography variant="h6">🔒 Admin access only</Typography>
+        <Typography>Please log in with an authorized admin account.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#111827", color: "white", minHeight: "100vh" }}>
@@ -129,7 +176,7 @@ export default function Dashboard() {
                 </CardContent>
                 <CardActions sx={{ justifyContent: "center" }}>
                   <Button color="success" variant="contained" onClick={() => updateStatus(submission.id, true)} sx={{ '&:hover': { backgroundColor: "#15803d" } }}>Approve</Button>
-                  <Button color="error" variant="contained" onClick={() => updateStatus(submission.id, false)} sx={{ '&:hover': { backgroundColor: "#dc2626" } }}>Reject</Button>
+                  <Button color="error" variant="contained" onClick={() => { setDeleteTarget(submission.id); setConfirmDeleteOpen(true); }} sx={{ '&:hover': { backgroundColor: "#dc2626" } }}>Reject</Button>
                 </CardActions>
               </Card>
             ))}
@@ -170,6 +217,32 @@ export default function Dashboard() {
           </Box>
         </AccordionDetails>
       </Accordion>
+
+      {/* Confirm Delete Modal */}
+      <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
+        <DialogTitle>Confirm Delete</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to permanently delete this submission? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDeleteOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              if (deleteTarget) deleteSubmission(deleteTarget);
+              setConfirmDeleteOpen(false);
+              setDeleteTarget(null);
+            }}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

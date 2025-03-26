@@ -39,4 +39,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-media-bridge-student-content-firebase-adminsdk-fbsvc-010126986f.json
+admin-sdk.json
+scripts/setAdminClaim.js

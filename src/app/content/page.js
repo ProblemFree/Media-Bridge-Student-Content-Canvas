@@ -1,18 +1,20 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { collection, db, query, where, onSnapshot } from '/lib/firebaseConfig';
-import { Container, Grid2, Typography} from '@mui/material';
+import { Container, Typography, CircularProgress, Box } from '@mui/material';
 import CardRain from '/src/components/CardRain';
+import useAdminAuth from "@/hooks/useAdminAuth";
 
 const ContentStream = () => {
   const [contentItems, setContentItems] = useState([]);
+  const { user, isAdmin, loading } = useAdminAuth();
 
   useEffect(() => {
-    // Create a Firestore query for submissions where "accepted" is true
+    if (!isAdmin) return;
+
     const submissionsRef = collection(db, 'uploads');
     const acceptedQuery = query(submissionsRef, where('accepted', '==', true));
 
-    // Set up a real-time listener for the query
     const unsubscribe = onSnapshot(
       acceptedQuery,
       (querySnapshot) => {
@@ -20,7 +22,6 @@ const ContentStream = () => {
         querySnapshot.forEach((doc) => {
           items.push({ id: doc.id, ...doc.data() });
         });
-        // Optionally, sort items by timestamp (newest first)
         items.sort((a, b) => b.timestamp - a.timestamp);
         setContentItems(items);
       },
@@ -29,14 +30,28 @@ const ContentStream = () => {
       }
     );
 
-    // Clean up the listener on unmount
     return () => unsubscribe();
-  }, []);
+  }, [isAdmin]);
 
-  
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <Box sx={{ p: 5, textAlign: 'center' }}>
+        <Typography variant="h6">🔒 Admin access only</Typography>
+        <Typography>Please log in with an authorized admin account.</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Container maxWidth={false} disableGutters>
-      {/* Header */}
       <Typography 
         variant="h4" 
         component="h1" 
@@ -47,7 +62,6 @@ const ContentStream = () => {
         Content Stream
       </Typography>
 
-      {/* CardRain component for continuous card rain effect */}
       <CardRain posts={contentItems} />
     </Container>
   );

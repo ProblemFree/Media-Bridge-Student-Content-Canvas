@@ -81,7 +81,7 @@ const EmailVerificationModal = ({ open, onVerified }) => {
           <Button onClick={handleVerifyCode} variant="contained">Verify</Button>
         )}
       </DialogActions>
-      <Button
+      {/* <Button
             onClick={() => {
                 localStorage.removeItem("verifiedEmail");
                 localStorage.removeItem("userId");
@@ -92,7 +92,7 @@ const EmailVerificationModal = ({ open, onVerified }) => {
             sx={{ mt: 2 }}
             >
             Log out
-        </Button>
+        </Button> */}
     </Dialog>
   );
 };

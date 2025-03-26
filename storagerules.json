@@ -2,22 +2,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Allow anyone (even unauthenticated) to write verification codes
-    match /verificationCodes/{docId} {
-      allow create: if true;
-      allow read: if true; // ✅ TEMPORARY: allow API route to query docs
-      allow update: if true;
+    // Moderation access for admin users
+    match /uploads/{docId} {
+      allow create: if isVerifiedUser();
+      allow read, update, delete: if isAdmin();
     }
 
-    // Optional verified users collection
+    // Verified email record
     match /verifiedUsers/{userId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if request.auth.token.role == "admin";
     }
 
-    // Your upload rule
-    match /uploads/{docId} {
-      allow create: if exists(/databases/$(database)/documents/verifiedUsers/$(request.resource.data.userId));
+    // Let admins manage verification codes
+    match /verificationCodes/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Utility functions
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == "admin";
+    }
+
+    function isVerifiedUser() {
+      return exists(/databases/$(database)/documents/verifiedUsers/$(request.resource.data.userId));
     }
   }
 }
