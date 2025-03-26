@@ -1,4 +1,3 @@
-// useAdminAuth.js
 // React hook that provides admin role detection from Firebase Auth
 
 import { useEffect, useState } from "react";

@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Utility functions
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == "admin";
+    }
+
+    function isVerifiedUser() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/verifiedUsers/$(request.auth.token.uid));
+    }
+
+    // ─── UPLOADS ────────────────────────────────
+    match /uploads/{docId} {
+      allow create: if isVerifiedUser() || isAdmin();
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ─── VERIFICATION CODES ─────────────────────
+    match /verificationCodes/{email} {
+      allow read, write: if true; // public access allowed for email verification
+    }
+
+    // ─── VERIFIED USERS ─────────────────────────
+    match /verifiedUsers/{userId} {
+      // Verified users can read their own status
+      allow read: if request.auth != null && request.auth.token.uid == userId;
+      // Admins can read/write any verifiedUser entry
+      allow read, write: if isAdmin();
+    }
+
+    // ─── CATCH-ALL: ADMIN ACCESS ONLY ───────────
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

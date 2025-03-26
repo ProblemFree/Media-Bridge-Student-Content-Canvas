@@ -1,4 +1,3 @@
-// components/CardRain.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import PostCard from './PostCard';
