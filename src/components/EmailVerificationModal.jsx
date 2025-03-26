@@ -6,7 +6,7 @@ import {
   DialogActions, Button, Typography
 } from '@mui/material';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../lib/firebaseConfig';
+import { db } from '/lib/firebaseConfig';
 import sha256 from 'crypto-js/sha256';
 
 const EmailVerificationModal = ({ open, onVerified }) => {
