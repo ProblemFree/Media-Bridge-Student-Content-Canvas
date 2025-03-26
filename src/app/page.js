@@ -5,20 +5,40 @@ import { storage, db, collection, addDoc } from "/lib/firebaseConfig";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import EmailVerificationModal from "../components/EmailVerificationModal";
 import PostCard from "../components/PostCard";
-import { Box, Button, TextField, Typography } from "@mui/material";
+import { Box, Button, TextField, Typography, Paper } from "@mui/material";
 
 export default function Home() {
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState("");
   const [message, setMessage] = useState("");
   const [userEmail, setUserEmail] = useState(null);
+  const [userId, setUserId] = useState(null);
   const [showModal, setShowModal] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem("verifiedEmail");
-    if (storedEmail) {
-      setUserEmail(storedEmail);
-      setShowModal(false);
+    if (typeof window !== "undefined") {
+      const storedEmail = localStorage.getItem("verifiedEmail");
+      const storedId = localStorage.getItem("userId");
+      if (storedEmail && storedId) {
+        setUserEmail(storedEmail);
+        setUserId(storedId);
+        setShowModal(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    setHasMounted(true);
+
+    if (typeof window !== "undefined") {
+      const storedEmail = localStorage.getItem("verifiedEmail");
+      const storedId = localStorage.getItem("userId");
+      if (storedEmail && storedId) {
+        setUserEmail(storedEmail);
+        setUserId(storedId);
+        setShowModal(false);
+      }
     }
   }, []);
 
@@ -29,7 +49,7 @@ export default function Home() {
   };
 
   const handleUpload = async () => {
-    if (!userEmail) return alert("User not verified.");
+    if (!userEmail || !userId) return alert("User not verified.");
     if (!image && !message) return alert("Please submit an image, message, or both.");
 
     let fileUrl = "";
@@ -47,7 +67,7 @@ export default function Home() {
     }
 
     await addDoc(collection(db, "uploads"), {
-      userId: userEmail.split("@")[0],
+      userId,
       email: userEmail,
       message,
       fileName,
@@ -63,46 +83,96 @@ export default function Home() {
     setMessage("");
   };
 
+  if (!hasMounted) return null; // or a loading skeleton
+
   return (
-    <Box sx={{ textAlign: "center", p: 3 }}>
-      <EmailVerificationModal open={showModal} onVerified={(email) => {
-        setUserEmail(email);
-        setShowModal(false);
-      }} />
+    <Box
+      sx={{
+        textAlign: "center",
+        p: 2,
+        minHeight: "100vh",
+        backgroundColor: "#1e293b",
+        color: "white",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
+      <EmailVerificationModal
+        open={showModal}
+        onVerified={(email) => {
+          const id = email.split("@")[0];
+          setUserEmail(email);
+          setUserId(id);
+          localStorage.setItem("verifiedEmail", email);
+          localStorage.setItem("userId", id);
+          setShowModal(false);
+        }}
+      />
 
-      <Typography variant="h4" gutterBottom>Share Your Message</Typography>
+      <Typography variant="h4" gutterBottom>
+        Share Your Message
+      </Typography>
 
-      <Box sx={{ my: 2 }}>
+      <Paper
+        elevation={4}
+        sx={{
+          p: 3,
+          maxWidth: 400,
+          width: "100%",
+          mt: 2,
+          mb: 3,
+          backgroundColor: "#334155",
+          color: "white"
+        }}
+      >
         <input
           type="file"
           accept="image/png, image/jpeg, image/jpg, image/gif"
           onChange={handleFileChange}
+          style={{ display: "block", marginBottom: "16px", color: "white" }}
         />
-      </Box>
 
-      <TextField
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Say something..."
-        multiline
-        fullWidth
-        sx={{ maxWidth: 400, mb: 2 }}
-      />
+        <TextField
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Say something..."
+          multiline
+          fullWidth
+          InputProps={{ sx: { color: "white" } }}
+          InputLabelProps={{ sx: { color: "white" } }}
+          sx={{ mb: 2, backgroundColor: "#1e293b" }}
+        />
 
-      <Button
-        variant="contained"
-        onClick={handleUpload}
-        disabled={!userEmail}
-      >
-        Submit
-      </Button>
+        <Button
+          variant="contained"
+          onClick={handleUpload}
+          disabled={!userEmail || !userId}
+          fullWidth
+        >
+          Submit
+        </Button>
+
+        <Button
+          onClick={() => {
+            localStorage.removeItem("verifiedEmail");
+            localStorage.removeItem("userId");
+            window.location.reload();
+          }}
+          color="warning"
+          fullWidth
+          sx={{ mt: 1 }}
+        >
+          Log Out
+        </Button>
+      </Paper>
 
       {(image || message) && (
-        <Box sx={{ mt: 5, display: "flex", justifyContent: "center" }}>
+        <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
           <PostCard
             fileUrl={image ? URL.createObjectURL(image) : null}
             message={message}
-            userId={userEmail?.split("@")[0]}
+            userId={userId || "anon"}
           />
         </Box>
       )}

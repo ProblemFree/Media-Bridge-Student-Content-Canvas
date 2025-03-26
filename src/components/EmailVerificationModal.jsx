@@ -53,11 +53,14 @@ const EmailVerificationModal = ({ open, onVerified }) => {
 
     const result = await res.json();
     if (result.success) {
-      localStorage.setItem("verifiedEmail", email);
-      onVerified(email);
+        const userId = email.split("@")[0];
+        localStorage.setItem("verifiedEmail", email);
+        localStorage.setItem("userId", userId); // Save ID for uploads
+        onVerified(email);
     } else {
-      setMessage("Invalid or expired code.");
+        setMessage(result.error || "Verification failed.");
     }
+      
   };
 
   return (
@@ -78,6 +81,18 @@ const EmailVerificationModal = ({ open, onVerified }) => {
           <Button onClick={handleVerifyCode} variant="contained">Verify</Button>
         )}
       </DialogActions>
+      <Button
+            onClick={() => {
+                localStorage.removeItem("verifiedEmail");
+                localStorage.removeItem("userId");
+                window.location.reload();
+            }}
+            variant="outlined"
+            color="warning"
+            sx={{ mt: 2 }}
+            >
+            Log out
+        </Button>
     </Dialog>
   );
 };
