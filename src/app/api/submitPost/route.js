@@ -1,4 +1,4 @@
-import { db, bucket } from "/lib/firebaseAdmin";
+import { adminDb, bucket } from "@/lib/firebaseAdmin";
 import { v4 as uuidv4 } from "uuid";
 import { NextResponse } from "next/server";
 
@@ -18,15 +18,14 @@ export async function POST(req) {
     let fileName = "";
 
     if (file) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
+      const buffer = Buffer.from(await file.arrayBuffer());
       const originalName = formData.get("fileName") || "upload";
       const uniqueName = `${uuidv4()}-${originalName}`;
+      const fileType = file.type || "application/octet-stream"; // fallback type
 
       const fileRef = bucket.file(`images/${uniqueName}`);
       await fileRef.save(buffer, {
-        contentType: file.type,
+        contentType: fileType,
         public: true,
         metadata: {
           firebaseStorageDownloadTokens: uuidv4(),
@@ -37,7 +36,7 @@ export async function POST(req) {
       fileName = uniqueName;
     }
 
-    await db.collection("uploads").add({
+    await adminDb.collection("uploads").add({
       email,
       userId,
       message,

@@ -1,4 +1,4 @@
-import { adminDb } from "/lib/firebaseAdmin";
+import { adminDb } from "@/lib/firebaseAdmin";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 

@@ -1,16 +1,13 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Allow admins full access to storage
-    match /{allPaths=**} {
-      allow read, write: if request.auth.token.admin == true;
+    match /images/{allImages} {
+      allow read: if true;
+      allow write: if request.auth.token.verified == true || request.auth.token.role == "admin";
     }
 
-    // Allow verified users to upload to /images directory
-    match /images/{allImages} {
-      allow write: if request.auth != null && request.auth.token.verified == true;
-      allow read: if true; // Anyone can read (optional)
+    match /{allPaths=**} {
+      allow read, write: if request.auth.token.role == "admin";
     }
   }
 }

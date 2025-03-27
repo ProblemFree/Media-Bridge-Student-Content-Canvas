@@ -1,76 +1,83 @@
+"use client";
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 import PostCard from './PostCard';
 
-// Display and card dimensions/constants
 const CONTAINER_WIDTH = 3072;
 const CONTAINER_HEIGHT = 1280;
 const CARD_WIDTH = 350;
 const CARD_HEIGHT = 350;
 const TOP_MARGIN = 20;
 const BOTTOM_MARGIN = 20;
-const DURATION = 30; // seconds for a card to traverse the screen
-
-// Number of vertical lanes
+const DURATION = 30;
 const NUM_LANES = 4;
-// Calculate lane vertical positions so that cards remain fully visible within TOP and BOTTOM margins.
+
 const availableHeight = CONTAINER_HEIGHT - TOP_MARGIN - BOTTOM_MARGIN;
 const laneHeight = availableHeight / NUM_LANES;
 const lanePositions = Array.from({ length: NUM_LANES }, (_, i) => TOP_MARGIN + i * laneHeight);
 
-// Clearance delay: the time it takes for a card to move 1.5x its width (to ensure better spacing).
 const clearanceDelay = (CARD_WIDTH * 1.5 / (CONTAINER_WIDTH + CARD_WIDTH)) * DURATION;
+
+function shufflePosts(posts) {
+  const array = posts.slice();
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
 
 const CardRain = ({ posts }) => {
   const [cards, setCards] = useState([]);
   const laneNextSpawnRef = useRef(Array(NUM_LANES).fill(Date.now()));
-  const postIndexRef = useRef(0);
+  const postQueueRef = useRef([]);
+  const seenPostIdsRef = useRef(new Set());
 
-  // Helper function to retrieve the next post in round-robin order.
-  const getNextPost = () => {
-    if (!posts || posts.length === 0) return null;
-    const post = posts[postIndexRef.current % posts.length];
-    postIndexRef.current += 1;
-    return post;
-  };
+  // On post update, push only new unseen posts to the top of queue
+  useEffect(() => {
+    if (!posts || posts.length === 0) return;
 
-  // Spawn a new card in a random available lane.
+    const newPosts = posts.filter(post => !seenPostIdsRef.current.has(post.id));
+    newPosts.forEach(post => seenPostIdsRef.current.add(post.id));
+
+    const recycled = posts.filter(post => seenPostIdsRef.current.has(post.id));
+    postQueueRef.current = [...shufflePosts(newPosts), ...shufflePosts(recycled)];
+
+  }, [posts]);
+
   const spawnCard = () => {
     const now = Date.now();
     const availableLanes = laneNextSpawnRef.current
-      .map((nextSpawnTime, index) => (now >= nextSpawnTime ? index : null))
-      .filter(index => index !== null);
-    
-    if (availableLanes.length > 0) {
-      const randomLane =
-        availableLanes[Math.floor(Math.random() * availableLanes.length)];
+      .map((time, idx) => (now >= time ? idx : null))
+      .filter(idx => idx !== null);
 
-      const newPost = getNextPost();
-      if (!newPost) return;
+    if (availableLanes.length === 0 || postQueueRef.current.length === 0) return;
 
-      setCards(prevCards => [
-        ...prevCards,
-        {
-          post: newPost,
-          lane: randomLane,
-          key: `${newPost.id}-${Date.now()}-${Math.random()}`
-        }
-      ]);
+    const nextPost = postQueueRef.current.shift(); // FIFO: spawn new or recycled post
+    postQueueRef.current.push(nextPost); // recycle it back to the queue
 
-      laneNextSpawnRef.current[randomLane] = now + clearanceDelay * 1000;
-    }
+    const randomLane = availableLanes[Math.floor(Math.random() * availableLanes.length)];
+
+    setCards(prev => [
+      ...prev,
+      {
+        post: nextPost,
+        lane: randomLane,
+        key: `${nextPost.id}-${Date.now()}-${Math.random()}`
+      }
+    ]);
+
+    laneNextSpawnRef.current[randomLane] = now + clearanceDelay * 1000;
   };
 
-  // Set up an interval to continuously attempt spawning a single new post at a time.
   useEffect(() => {
-    if (!posts || posts.length === 0) return;
-    const interval = setInterval(spawnCard, 2000); // Check every 2 seconds
+    const interval = setInterval(spawnCard, 2000);
     return () => clearInterval(interval);
-  }, [posts]);
+  }, []);
 
-  // When a card finishes its animation, remove it from the state.
   const handleAnimationEnd = (key) => {
-    setCards(prevCards => prevCards.filter(card => card.key !== key));
+    setCards(prev => prev.filter(card => card.key !== key));
   };
 
   return (
@@ -89,7 +96,7 @@ const CardRain = ({ posts }) => {
           style={{
             position: 'absolute',
             top: lanePositions[card.lane],
-            left: CONTAINER_WIDTH, // Start at right edge
+            left: CONTAINER_WIDTH,
             width: CARD_WIDTH,
             height: CARD_HEIGHT,
             transform: 'rotate(-90deg)',
@@ -101,11 +108,12 @@ const CardRain = ({ posts }) => {
           <PostCard
             fileUrl={card.post.fileUrl}
             message={card.post.message}
-            userID={card.post.userID}
+            userId={card.post.userId}
             fileName={card.post.fileName}
           />
         </div>
       ))}
+
       <style jsx>{`
         @keyframes moveLeft {
           from {
