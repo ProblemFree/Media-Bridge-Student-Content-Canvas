@@ -1,9 +1,10 @@
 {
   "storage": {
-    "rules": "storagerules.json"
+    "rules": "storagerules.rules"
   },
-  "database": {
-    "rules": "databaserules.json"
+
+  "firestore": {
+    "rules": "firestore.rules"
   },
   "hosting": {
     "public": "public",

@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == "admin";
+    }
+
+    function isVerifiedUser() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/verifiedUsers/$(request.auth.token.uid));
+    }
+
+    match /uploads/{docId} {
+      allow create: if isVerifiedUser() || isAdmin();
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /verificationCodes/{email} {
+      allow read, write: if true;
+    }
+
+    match /verifiedUsers/{userId} {
+      allow read: if request.auth != null && request.auth.token.uid == userId;
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

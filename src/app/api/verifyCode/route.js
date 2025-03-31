@@ -1,66 +1,46 @@
-import { db } from '/lib/firebaseConfig';
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-  doc,
-  setDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
+import { adminDb } from "@/lib/firebaseAdmin";
+import { getAuth } from "firebase-admin/auth";
+import crypto from "crypto";
 
 export async function POST(req) {
   try {
-    const { email, codeHash } = await req.json();
+    const { email, code, userId } = await req.json();
 
-    const q = query(
-      collection(db, "verificationCodes"),
-      where("email", "==", email),
-      where("codeHash", "==", codeHash),
-      where("verified", "==", false)
-    );
-
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) {
-      return new Response(JSON.stringify({ success: false, error: "Code not found or already used." }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" }
-      });
+    if (!email || !code || !userId) {
+      return Response.json({ success: false, error: "Missing parameters" }, { status: 400 });
     }
 
-    const match = snapshot.docs[0];
-    const data = match.data();
+    const codeDoc = await adminDb.collection("verificationCodes").doc(email).get();
 
-    // Expiration check (10 minutes)
-    const codeCreatedAt = data.createdAt?.toMillis?.();
-    if (!codeCreatedAt || (Date.now() - codeCreatedAt > 10 * 60 * 1000)) {
-      return new Response(JSON.stringify({ success: false, error: "Code expired" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json" }
-      });
+    if (!codeDoc.exists) {
+      return Response.json({ success: false, error: "No code found for this email" }, { status: 404 });
     }
 
-    // Mark code verified
-    await updateDoc(doc(db, "verificationCodes", match.id), { verified: true });
+    const { codeHash, createdAt } = codeDoc.data();
 
-    // Register verified user
-    const userId = email.split("@")[0]; // e.g., jdoe3
-    await setDoc(doc(db, "verifiedUsers", userId), {
+    // Expire after 10 minutes
+    if (Date.now() - createdAt > 10 * 60 * 1000) {
+      await adminDb.collection("verificationCodes").doc(email).delete();
+      return Response.json({ success: false, error: "Code expired" }, { status: 403 });
+    }
+
+    const inputHash = crypto.createHash("sha256").update(code).digest("hex");
+
+    if (inputHash !== codeHash) {
+      return Response.json({ success: false, error: "Invalid code" }, { status: 403 });
+    }
+
+    // Mark user as verified
+    await adminDb.collection("verifiedUsers").doc(userId).set({
       email,
-      verifiedAt: serverTimestamp(),
+      verifiedAt: Date.now(),
     });
 
-    return new Response(JSON.stringify({ success: true, userId }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
+    await adminDb.collection("verificationCodes").doc(email).delete();
 
-  } catch (err) {
-    console.error("VerifyCode error:", err);
-    return new Response(JSON.stringify({ success: false, error: err.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("Error verifying code:", error);
+    return Response.json({ success: false, error: "Internal server error" }, { status: 500 });
   }
 }

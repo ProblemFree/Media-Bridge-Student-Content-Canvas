@@ -1,9 +1,6 @@
-// useAdminAuth.js
-// React hook that provides admin role detection from Firebase Auth
-
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, getIdTokenResult } from "firebase/auth";
-import { auth } from "/lib/firebaseConfig"; // adjust path if needed
+import { auth } from "@/lib/firebaseConfig";
 
 export default function useAdminAuth() {
   const [user, setUser] = useState(null);
@@ -16,8 +13,10 @@ export default function useAdminAuth() {
       if (firebaseUser) {
         try {
           const tokenResult = await getIdTokenResult(firebaseUser, true);
-          const role = tokenResult.claims.role;
-          setIsAdmin(role === "admin");
+          const claims = tokenResult.claims;
+
+          // Check admin boolean flag (not role string)
+          setIsAdmin(claims.admin === true);
         } catch (err) {
           console.error("Error checking admin claim:", err);
           setIsAdmin(false);
