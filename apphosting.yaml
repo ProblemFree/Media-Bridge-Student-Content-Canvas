@@ -59,12 +59,12 @@ env:
   availability:
     - BUILD
     - RUNTIME
-- variable: FIREBASE_CONFIG
+- variable: NEXT_PUBLIC_FIREBASE_CONFIG
   value: '{"databaseURL":"https://media-bridge-student-content-default-rtdb.firebaseio.com","projectId":"media-bridge-student-content","storageBucket":"media-bridge-student-content.firebasestorage.app"}'
   availability:
     - BUILD
     - RUNTIME
-- variable: FIREBASE_WEBAPP_CONFIG
+- variable: NEXT_PUBLIC_FIREBASE_WEBAPP_CONFIG
   value: '{"apiKey":"AIzaSyDSklgwCF-sP6kr7NxrvzyOANTkQ_eZ2Ok","appId":"1:893510981583:web:d2f0b616253b22bbfc64ba","authDomain":"media-bridge-student-content.firebaseapp.com","databaseURL":"https://media-bridge-student-content-default-rtdb.firebaseio.com","messagingSenderId":"893510981583","projectId":"media-bridge-student-content","storageBucket":"media-bridge-student-content.firebasestorage.app"}'
   availability:
     - BUILD
