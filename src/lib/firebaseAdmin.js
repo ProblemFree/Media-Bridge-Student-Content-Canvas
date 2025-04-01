@@ -6,9 +6,14 @@ import { getStorage } from "firebase-admin/storage";
 let serviceAccount = {};
 try {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  serviceAccount = typeof raw === "string" ? JSON.parse(raw) : {};
-  if (!serviceAccount.project_id || !serviceAccount.private_key) {
-    throw new Error("Missing required service account fields");
+  if (raw) {
+    serviceAccount = JSON.parse(raw);
+    // Validate the presence of required fields
+    if (!serviceAccount.project_id || !serviceAccount.private_key) {
+      throw new Error("Missing required service account fields");
+    }
+  } else {
+    throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY is not defined");
   }
 } catch (e) {
   console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY:", e.message);
