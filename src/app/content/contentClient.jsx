@@ -65,13 +65,13 @@ export default function ContentClient() {
       <SideBanner
         align="left"
         title="Submit Something!"
-        message="Use this QR code to upload a message, image, or combination."
+        message="Use this QR code to upload a post."
         qrUrl="https://your-submission-url.com"
       />
       <SideBanner
          align="right"
          title="Submit Something!"
-         message="Use this QR code to upload a message, image, or combination."
+         message="Use this QR code to upload a post."
          qrUrl="https://your-submission-url.com"
       />
     </Box>

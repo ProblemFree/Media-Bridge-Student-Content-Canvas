@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Box, Typography, Select, MenuItem, Button, Checkbox, TextField,
   Card, CardActions, CardContent, Accordion, AccordionSummary,
@@ -13,24 +13,27 @@ import PostCard from "@/components/PostCard";
 
 export default function DashboardClient() {
   const { user, isAdmin, loading } = useAdminAuth();
-
   const [submissions, setSubmissions] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleteQueue, setDeleteQueue] = useState([]);
-
-  useEffect(() => {
-    if (isAdmin) fetchSubmissions();
-  }, [isAdmin]);
+  const pollingRef = useRef(null);
 
   const fetchSubmissions = async () => {
     try {
       const res = await fetch("/api/moderation/getSubmissions");
       const data = await res.json();
       if (data.success) {
-        setSubmissions(data.submissions || []);
+        const updated = data.submissions || [];
+
+        // Retain selected IDs if still present
+        const validSelected = selectedIds.filter((id) =>
+          updated.find((s) => s.id === id)
+        );
+        setSelectedIds(validSelected);
+        setSubmissions(updated);
       } else {
         console.error("Failed to load submissions:", data.error);
       }
@@ -38,6 +41,14 @@ export default function DashboardClient() {
       console.error("Failed to fetch submissions:", err);
     }
   };
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchSubmissions();
+      pollingRef.current = setInterval(fetchSubmissions, 5000);
+    }
+    return () => clearInterval(pollingRef.current);
+  }, [isAdmin]);
 
   const approveSubmission = async (id) => {
     await fetch("/api/moderation/approve", {
@@ -64,8 +75,12 @@ export default function DashboardClient() {
   };
 
   const handleBatchAction = (action) => {
-    const isPending = selectedIds.every(id => pending.find(p => p.id === id));
-    const isAccepted = selectedIds.every(id => accepted.find(a => a.id === id));
+    const isPending = selectedIds.every((id) =>
+      pending.find((p) => p.id === id)
+    );
+    const isAccepted = selectedIds.every((id) =>
+      accepted.find((a) => a.id === id)
+    );
 
     if (!isPending && !isAccepted) {
       alert("Please only select pending or accepted posts, not both.");
@@ -73,12 +88,12 @@ export default function DashboardClient() {
     }
 
     if (action === "approve") {
-      selectedIds.forEach(id => approveSubmission(id));
+      selectedIds.forEach((id) => approveSubmission(id));
     } else if (action === "revert") {
-      selectedIds.forEach(id => revertSubmission(id));
-    } if (action === "delete") {
-        setDeleteQueue([...selectedIds]);
-        setConfirmDeleteOpen(true);
+      selectedIds.forEach((id) => revertSubmission(id));
+    } else if (action === "delete") {
+      setDeleteQueue([...selectedIds]);
+      setConfirmDeleteOpen(true);
     }
 
     setSelectedIds([]);
@@ -124,9 +139,12 @@ export default function DashboardClient() {
     );
   }
 
-  const showApprove = selectedIds.length && selectedIds.every(id => pending.find(p => p.id === id));
-  const showRevert = selectedIds.length && selectedIds.every(id => accepted.find(a => a.id === id));
-  const showDelete = selectedIds.length && selectedIds.every(id => pending.find(p => p.id === id));
+  const showApprove =
+    selectedIds.length && selectedIds.every((id) => pending.find((p) => p.id === id));
+  const showRevert =
+    selectedIds.length && selectedIds.every((id) => accepted.find((a) => a.id === id));
+  const showDelete =
+    selectedIds.length && selectedIds.every((id) => pending.find((p) => p.id === id));
 
   return (
     <Box sx={{ p: 4, backgroundColor: "#111827", color: "white", minHeight: "100vh" }}>
@@ -152,11 +170,7 @@ export default function DashboardClient() {
         </Select>
 
         {showApprove && (
-          <Button
-            onClick={() => handleBatchAction("approve")}
-            color="success"
-            variant="contained"
-          >
+          <Button onClick={() => handleBatchAction("approve")} color="success" variant="contained">
             Approve Selected
           </Button>
         )}
@@ -166,7 +180,7 @@ export default function DashboardClient() {
             sx={{
               backgroundColor: "#facc15",
               color: "black",
-              '&:hover': { backgroundColor: "#fde047" }
+              "&:hover": { backgroundColor: "#fde047" },
             }}
           >
             Revert Selected
@@ -178,7 +192,7 @@ export default function DashboardClient() {
             sx={{
               backgroundColor: "#dc2626",
               color: "white",
-              '&:hover': { backgroundColor: "#b91c1c" }
+              "&:hover": { backgroundColor: "#b91c1c" },
             }}
           >
             Delete Selected
@@ -209,7 +223,11 @@ export default function DashboardClient() {
                     }}
                     sx={{ color: "white" }}
                   />
-                  <PostCard fileUrl={s.fileUrl} message={s.message} userId={s.userId || "Unknown"} />
+                  <PostCard
+                    fileUrl={s.fileUrl}
+                    message={s.message}
+                    userId={s.userId || "Unknown"}
+                  />
                   <CardContent>
                     <Typography variant="caption">
                       {new Date(s.timestamp).toLocaleString() || "Invalid Date"}
@@ -217,16 +235,39 @@ export default function DashboardClient() {
                   </CardContent>
                   <CardActions sx={{ justifyContent: "center" }}>
                     {actions.includes("approve") && (
-                      <Button color="success" variant="contained" onClick={() => approveSubmission(s.id)} sx={{ '&:hover': { backgroundColor: "#15803d" } }}>Approve</Button>
+                      <Button
+                        color="success"
+                        variant="contained"
+                        onClick={() => approveSubmission(s.id)}
+                        sx={{ "&:hover": { backgroundColor: "#15803d" } }}
+                      >
+                        Approve
+                      </Button>
                     )}
                     {actions.includes("reject") && (
-                      <Button color="error" variant="contained" onClick={() => {
-                        setDeleteQueue([s.id]);
-                        setConfirmDeleteOpen(true);
-                      }} sx={{ '&:hover': { backgroundColor: "#dc2626" } }}>Reject</Button>
+                      <Button
+                        color="error"
+                        variant="contained"
+                        onClick={() => {
+                          setDeleteQueue([s.id]);
+                          setConfirmDeleteOpen(true);
+                        }}
+                        sx={{ "&:hover": { backgroundColor: "#dc2626" } }}
+                      >
+                        Reject
+                      </Button>
                     )}
                     {actions.includes("revert") && (
-                      <Button sx={{ backgroundColor: "#facc15", color: "black", '&:hover': { backgroundColor: "#fde047" } }} onClick={() => revertSubmission(s.id)}>Revert</Button>
+                      <Button
+                        sx={{
+                          backgroundColor: "#facc15",
+                          color: "black",
+                          "&:hover": { backgroundColor: "#fde047" },
+                        }}
+                        onClick={() => revertSubmission(s.id)}
+                      >
+                        Revert
+                      </Button>
                     )}
                   </CardActions>
                 </Card>
@@ -240,13 +281,17 @@ export default function DashboardClient() {
       <Dialog open={confirmDeleteOpen} onClose={() => setConfirmDeleteOpen(false)}>
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
-            <DialogContentText>
-                Are you sure you want to permanently delete {deleteQueue.length} submission(s)? This action cannot be undone.
-            </DialogContentText>
+          <DialogContentText>
+            Are you sure you want to permanently delete {deleteQueue.length} submission(s)? This action cannot be undone.
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmDeleteOpen(false)} color="primary">Cancel</Button>
-          <Button onClick={handleConfirmedDelete} color="error" variant="contained">Delete</Button>
+          <Button onClick={() => setConfirmDeleteOpen(false)} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmedDelete} color="error" variant="contained">
+            Delete
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

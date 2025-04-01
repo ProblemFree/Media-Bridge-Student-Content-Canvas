@@ -5,7 +5,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const snapshot = await adminDb.collection("uploads").get();
+    const snapshot = await adminDb
+      .collection("uploads")
+      .orderBy("timestamp", "desc")
+      .get();
 
     const submissions = snapshot.docs.map((doc) => {
       const data = doc.data();
