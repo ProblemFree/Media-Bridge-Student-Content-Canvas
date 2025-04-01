@@ -21,7 +21,9 @@ environment:
       secret: FIREBASE_SERVICE_ACCOUNT_KEY
       version: latest
       project_id: media-bridge-student-content
-      availability: BUILD_AND_RUNTIME
+      availability:
+      - BUILD
+      - RUNTIME 
     - key: SMTP_USER
       secret: SMTP_USER
     - key: SMTP_PASS
