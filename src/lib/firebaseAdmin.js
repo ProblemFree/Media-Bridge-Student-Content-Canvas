@@ -8,10 +8,10 @@ try {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
     throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY is missing");
   }
-  // Replace literal newlines with the escaped version
-  const safeKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.replace(/\n/g, "\\n");
-  serviceAccount = JSON.parse(safeKey);
-  console.log(serviceAccount);
+  let key = process.env.FIREBASE_SERVICE_ACCOUNT_KEY.trim();
+  // Replace literal newlines with the two-character escape sequence \n
+  key = key.replace(/(\r\n|\n|\r)/gm, "\\n");
+  serviceAccount = JSON.parse(key);
   if (typeof serviceAccount.project_id !== "string") {
     throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY is invalid: missing project_id");
   }
