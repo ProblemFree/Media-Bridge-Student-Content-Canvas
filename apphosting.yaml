@@ -1,11 +1,8 @@
 runtime: nodejs20
-env: nextjs
 
-# Build command (optional, can be set in package.json)
 build:
   command: npm run build
 
-# Connect Cloud Secrets to your environment
 environment:
   secrets:
     - key: FIREBASE_API_KEY
@@ -30,4 +27,3 @@ environment:
       secret: FROM_EMAIL
     - key: ADMIN_EMAILS
       secret: ADMIN_EMAILS
-
