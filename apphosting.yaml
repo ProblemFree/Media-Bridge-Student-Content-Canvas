@@ -19,6 +19,9 @@ environment:
       secret: FIREBASE_APP_ID
     - key: FIREBASE_SERVICE_ACCOUNT_KEY
       secret: FIREBASE_SERVICE_ACCOUNT_KEY
+      availability:
+        - BUILD
+        - RUNTIME
     - key: SMTP_USER
       secret: SMTP_USER
     - key: SMTP_PASS
