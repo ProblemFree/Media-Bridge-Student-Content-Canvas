@@ -43,7 +43,7 @@ const EmailVerificationModal = ({ open, onVerified }) => {
   };
 
   const handleVerifyCode = async () => {
-    const userId = email.split("@")[0]; // used for audit logging / display
+    const userId = email.split("@")[0];
 
     try {
       const res = await fetch("/api/verifyCode", {
@@ -71,13 +71,22 @@ const EmailVerificationModal = ({ open, onVerified }) => {
       <DialogTitle>Email Verification</DialogTitle>
       <DialogContent>
         {step === 1 ? (
-          <TextField
-            label="GT Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            fullWidth
-            autoFocus
-          />
+          <>
+            {/* Friendly disclaimer */}
+            <Typography variant="body2" sx={{ mb: 2, color: "#6b7280" }}>
+              <strong>Heads up!</strong><br />
+              We ask for your Georgia Tech email to keep this space within the GT community.
+              What you post will be linked to your email for moderation — but don’t worry, your name won’t be shown.
+            </Typography>
+
+            <TextField
+              label="GT Email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              fullWidth
+              autoFocus
+            />
+          </>
         ) : (
           <TextField
             label="Enter 6-digit Code"
