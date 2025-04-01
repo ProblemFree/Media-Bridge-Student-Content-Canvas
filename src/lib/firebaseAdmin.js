@@ -8,7 +8,7 @@ try {
   if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
     throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY is missing");
   }
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'));
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
   if (typeof serviceAccount.project_id !== "string") {
     throw new Error("FIREBASE_SERVICE_ACCOUNT_KEY is invalid: missing project_id");
   }
