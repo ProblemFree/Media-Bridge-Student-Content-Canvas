@@ -5,6 +5,11 @@ build:
 
 environment:
   secrets:
+    - variable: FIREBASE_SERVICE_ACCOUNT_KEY
+      secret: FIREBASE_SERVICE_ACCOUNT_KEY
+      availability:
+        - BUILD
+        - RUNTIME
     - key: FIREBASE_API_KEY
       secret: FIREBASE_API_KEY
     - key: FIREBASE_AUTH_DOMAIN
@@ -17,13 +22,6 @@ environment:
       secret: FIREBASE_MESSAGING_SENDER_ID
     - key: FIREBASE_APP_ID
       secret: FIREBASE_APP_ID
-    - key: FIREBASE_SERVICE_ACCOUNT_KEY
-      secret: FIREBASE_SERVICE_ACCOUNT_KEY
-      version: latest
-      project_id: media-bridge-student-content
-      availability:
-      - BUILD
-      - RUNTIME 
     - key: SMTP_USER
       secret: SMTP_USER
     - key: SMTP_PASS
