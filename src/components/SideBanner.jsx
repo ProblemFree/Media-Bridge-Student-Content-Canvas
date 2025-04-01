@@ -14,7 +14,7 @@ const SideBanner = ({ title, message, qrUrl, align = "left" }) => {
         position: "absolute",
         top: 0,
         ...position,
-        width: 260, // Wider banner for better spacing
+        width: 360, // Wider banner for better spacing
         height: 1280,
         backgroundColor: "#000",
         color: "white",
@@ -31,7 +31,7 @@ const SideBanner = ({ title, message, qrUrl, align = "left" }) => {
     >
       {/* Top QR Code */}
       <Box sx={{ mt: 4, backgroundColor: "white", p: 1.5, borderRadius: 2 }}>
-        <QRCodeCanvas value={qrUrl} size={160} />
+        <QRCodeCanvas value={qrUrl} size={260} />
       </Box>
 
       {/* Center Text (rotated) */}

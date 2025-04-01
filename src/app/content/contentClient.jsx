@@ -66,13 +66,13 @@ export default function ContentClient() {
         align="left"
         title="Submit Something!"
         message="Use this QR code to upload a post."
-        qrUrl="https://media-bridge-student-content.web.app/"
+        qrUrl="https://mbapphost--media-bridge-student-content.us-central1.hosted.app/"
       />
       <SideBanner
          align="right"
          title="Submit Something!"
          message="Use this QR code to upload a post."
-         qrUrl="https://media-bridge-student-content.web.app/"
+         qrUrl="https://mbapphost--media-bridge-student-content.us-central1.hosted.app/"
       />
     </Box>
   );
