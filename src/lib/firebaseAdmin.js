@@ -20,7 +20,7 @@ const app = !getApps().length
   ? initializeApp({
       credential: cert(serviceAccount),
       storageBucket:
-        process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "media-bridge-student-content.appspot.com",
+        process.env.FIREBASE_STORAGE_BUCKET || "media-bridge-student-content.firebasestorage.app",
     })
   : getApps()[0];
 
