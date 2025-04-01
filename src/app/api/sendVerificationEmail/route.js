@@ -2,6 +2,10 @@ import { adminDb } from "@/lib/firebaseAdmin";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 
+const smtpUser = process.env.SMTP_USER
+const smtpPass = process.env.SMTP_PASS
+const fromEmail = process.env.FROM_EMAIL
+
 export async function POST(req) {
   try {
     const { email } = await req.json();
@@ -24,13 +28,13 @@ export async function POST(req) {
         port: 587,
         secure: false,
         auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
+          user: smtpUser,
+          pass: smtpPass,
         },
       });
 
     await transporter.sendMail({
-      from: `"Media Bridge" <${process.env.FROM_EMAIL}>`,
+      from: `"Media Bridge" <${fromEmail}>`,
       to: email,
       subject: "Your Media Bridge Verification Code",
       text: `Your verification code is: ${code}`,

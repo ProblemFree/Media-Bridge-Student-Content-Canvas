@@ -14,15 +14,17 @@
     "@mui/icons-material": "^6.4.7",
     "@mui/material": "^6.4.7",
     "crypto-js": "^4.2.0",
-    "firebase": "^11.4.0",
+    "firebase": "^11.6.0",
     "firebase-admin": "^13.2.0",
     "firebase-functions": "^6.3.2",
     "firebase-tools": "^13.35.1",
     "motion": "^12.4.10",
     "next": "^15.2.4",
     "nodemailer": "^6.10.0",
+    "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "three": "^0.175.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

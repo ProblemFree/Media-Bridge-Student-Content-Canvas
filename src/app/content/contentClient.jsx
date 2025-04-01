@@ -3,6 +3,8 @@
 import { useEffect, useState, useRef } from "react";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import CardRain from "@/components/CardRain";
+import WaterScene from "@/components/WaterScene";
+import SideBanner from "@/components/SideBanner";
 import useAdminAuth from "@/hooks/useAdminAuth";
 
 export default function ContentClient() {
@@ -15,13 +17,10 @@ export default function ContentClient() {
       const res = await fetch("/api/acceptedPosts");
       const { posts: fetched } = await res.json();
 
-      // Filter for unseen posts only
-      const newPosts = fetched.filter((p) => !seenIds.current.has(p.id));
-      newPosts.forEach((p) => seenIds.current.add(p.id));
+      const newSeenIds = new Set(fetched.map(p => p.id));
+      seenIds.current = newSeenIds;
 
-      if (newPosts.length > 0) {
-        setPosts((prev) => [...prev, ...newPosts]);
-      }
+      setPosts(fetched);
     } catch (err) {
       console.error("Failed to fetch posts:", err);
     }
@@ -30,7 +29,7 @@ export default function ContentClient() {
   useEffect(() => {
     if (isAdmin) {
       fetchAcceptedPosts();
-      const interval = setInterval(fetchAcceptedPosts, 10000); // every 10 seconds
+      const interval = setInterval(fetchAcceptedPosts, 5000);
       return () => clearInterval(interval);
     }
   }, [isAdmin]);
@@ -52,5 +51,29 @@ export default function ContentClient() {
     );
   }
 
-  return <CardRain posts={posts} />;
+  return (
+    <Box
+      sx={{
+        position: "relative",
+        width: "3072px",
+        height: "1280px",
+        overflow: "hidden",
+      }}
+    >
+      <WaterScene />
+      <CardRain posts={posts} />
+      <SideBanner
+        align="left"
+        title="Submit Something!"
+        message="Use this QR code to upload a message, image, or combination."
+        qrUrl="https://your-submission-url.com"
+      />
+      <SideBanner
+         align="right"
+         title="Submit Something!"
+         message="Use this QR code to upload a message, image, or combination."
+         qrUrl="https://your-submission-url.com"
+      />
+    </Box>
+  );
 }
