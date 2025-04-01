@@ -150,6 +150,15 @@ export default function Home() {
           placeholder="Say something..."
           multiline
           fullWidth
+          slotProps={{ maxLength: 280 }}
+          helperText={
+            <Typography
+              variant="caption"
+              sx={{ color: message.length > 250 ? "orange" : "gray" }}
+            >
+              {`${message.length}/280 characters`}
+            </Typography>
+          }
           InputProps={{ sx: { color: "white" } }}
           InputLabelProps={{ sx: { color: "white" } }}
           sx={{ mb: 2, backgroundColor: "#1e293b" }}
