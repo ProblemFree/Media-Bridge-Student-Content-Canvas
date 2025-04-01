@@ -75,7 +75,7 @@ const SideBanner = ({ title, message, qrUrl, align = "left" }) => {
 
       {/* Bottom QR Code */}
       <Box sx={{ mb: 4, backgroundColor: "white", p: 1.5, borderRadius: 2 }}>
-        <QRCodeCanvas value={qrUrl} size={160} />
+        <QRCodeCanvas value={qrUrl} size={260} />
       </Box>
     </Box>
   );
