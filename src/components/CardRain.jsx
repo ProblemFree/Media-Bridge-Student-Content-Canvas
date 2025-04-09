@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -11,7 +10,7 @@ const CARD_WIDTH = 350;
 const CARD_HEIGHT = 350;
 const LANE_SPACING = 30;
 const BANNER_MARGIN = 360;
-const DEBUG = false; // Set true for outlines/logging
+const DEBUG = false;
 
 const USABLE_WIDTH = CONTAINER_WIDTH - 2 * BANNER_MARGIN;
 const NUM_LANES = Math.floor((USABLE_WIDTH + LANE_SPACING) / (CARD_WIDTH + LANE_SPACING));
@@ -27,36 +26,48 @@ function shufflePosts(posts) {
   return array;
 }
 
-const CardRain = ({ posts }) => {
-  const postQueue = useRef([]);
-  const seenPosts = useRef(new Set());
-  const newPostIds = useRef(new Set());
-
+const CardRain = () => {
   const [scrollDuration, setScrollDuration] = useState(20);
   const [spawnInterval, setSpawnInterval] = useState(3000);
   const [showControls, setShowControls] = useState(false);
 
-  useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "~") setShowControls((prev) => !prev);
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, []);
+  const postQueue = useRef([]);
+  const seenPosts = useRef(new Set());
+  const newPostIds = useRef(new Set());
+  const latestAccepted = useRef([]);
 
-  useEffect(() => {
-    const newPosts = posts.filter(p => !seenPosts.current.has(p.id));
+  const hydrateQueue = () => {
+    const newPosts = latestAccepted.current.filter(p => !seenPosts.current.has(p.id));
     newPosts.forEach(p => {
       seenPosts.current.add(p.id);
       newPostIds.current.add(p.id);
     });
 
-    const allPosts = posts.slice();
+    const allPosts = latestAccepted.current.slice();
     const newShuffled = shufflePosts(newPosts);
     const recycled = shufflePosts(allPosts.filter(p => !newPosts.includes(p)));
 
     postQueue.current = [...newShuffled, ...recycled];
-  }, [posts]);
+  };
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch("/api/getAcceptedPosts");
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          latestAccepted.current = data;
+          hydrateQueue();
+        }
+      } catch (error) {
+        console.error("Failed to fetch posts:", error);
+      }
+    };
+
+    fetchPosts(); // Initial load
+    const interval = setInterval(fetchPosts, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getNextPost = () => {
     const post = postQueue.current.shift();
@@ -67,6 +78,14 @@ const CardRain = ({ posts }) => {
       isNew: newPostIds.current.delete(post.id)
     };
   };
+
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "~") setShowControls(prev => !prev);
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   return (
     <Box
