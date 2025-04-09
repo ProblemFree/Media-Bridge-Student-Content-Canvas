@@ -5,7 +5,7 @@ import { Box, Typography } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 
 const SideBanner = ({ title, message, qrUrl, align = "left" }) => {
-  const rotate = align === "left" ? "rotate(-90deg)" : "rotate(90deg)";
+  const rotate = align === "left" ? "rotate(90deg)" : "rotate(-90deg)";
   const position = align === "left" ? { left: 0 } : { right: 0 };
 
   return (
