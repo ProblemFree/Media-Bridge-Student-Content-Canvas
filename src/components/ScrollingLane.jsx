@@ -12,13 +12,14 @@ const ScrollingLane = ({
   getNextPost,
   cardWidth = 350,
   cardHeight = 350,
-  spacing = 15,
+  spacing = 12,
 }) => {
   const [cards, setCards] = useState([]);
   const timer = useRef(null);
   const laneRef = useRef();
 
   const animationDuration = 30; // seconds
+  const clearanceTime = (cardHeight + spacing) / length * animationDuration * 1000;
 
   useEffect(() => {
     timer.current = setInterval(() => {
@@ -27,10 +28,10 @@ const ScrollingLane = ({
         const key = `${post.id}-${Date.now()}`;
         setCards((prev) => [...prev, { key, post }]);
       }
-    }, 2000);
+    }, clearanceTime);
 
     return () => clearInterval(timer.current);
-  }, [getNextPost]);
+  }, [getNextPost, clearanceTime]);
 
   const handleAnimationEnd = (key) => {
     setCards((prev) => prev.filter((c) => c.key !== key));
