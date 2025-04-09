@@ -1,13 +1,23 @@
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
 import PostCard from "./PostCard";
 
-const SPAWN_INTERVAL = 3000; // ms
-const SCROLL_DURATION = 20; // seconds
 const CARD_SPACING = 12;
 
-const ScrollingLane = ({ x, y, length, direction = "up", getNextPost, cardWidth, cardHeight }) => {
+const ScrollingLane = ({
+  x,
+  y,
+  length,
+  direction = "up",
+  getNextPost,
+  cardWidth,
+  cardHeight,
+  scrollDuration = 20,
+  spawnInterval = 3000,
+  debug = false
+}) => {
   const [cards, setCards] = useState([]);
   const cardId = useRef(0);
 
@@ -17,18 +27,18 @@ const ScrollingLane = ({ x, y, length, direction = "up", getNextPost, cardWidth,
       if (!post) return;
 
       const id = cardId.current++;
-      setCards(prev => [...prev, { id, post }]);
-
-      setTimeout(() => {
-        setCards(prev => prev.filter(c => c.id !== id));
-      }, SCROLL_DURATION * 1000);
-    }, SPAWN_INTERVAL);
+      setCards((prev) => [...prev, { id, post }]);
+    }, spawnInterval);
 
     return () => clearInterval(interval);
-  }, [getNextPost]);
+  }, [getNextPost, spawnInterval]);
+
+  const handleAnimationEnd = (id) => {
+    setCards((prev) => prev.filter((card) => card.id !== id));
+  };
 
   const isVertical = direction === "up" || direction === "down";
-  const translateFrom = direction === "up" || direction === "left" ? 100 : -100;
+  const scrollKey = `scroll-${direction}`;
 
   return (
     <div
@@ -36,28 +46,34 @@ const ScrollingLane = ({ x, y, length, direction = "up", getNextPost, cardWidth,
         position: "absolute",
         top: y,
         left: x,
-        width: isVertical ? `${cardWidth}px` : `${length}px`,
-        height: isVertical ? `${length}px` : `${cardHeight}px`,
-        overflow: "hidden"
+        width: isVertical ? cardWidth : length,
+        height: isVertical ? length : cardHeight,
+        overflow: "hidden",
+        outline: debug ? "1px solid red" : "none"
       }}
     >
-      {cards.map(card => (
+      {cards.map((card) => (
         <div
           key={card.id}
           style={{
             position: "absolute",
             width: `${cardWidth}px`,
             height: `${cardHeight}px`,
-            animation: `scroll-${direction} ${SCROLL_DURATION}s linear forwards`,
-            top: direction === "down" ? `-${cardHeight}px` : undefined,
-            bottom: direction === "up" ? `-${cardHeight}px` : undefined,
-            left: direction === "right" ? `-${cardWidth}px` : undefined,
-            right: direction === "left" ? `-${cardWidth}px` : undefined
+            top: direction === "down" ? -cardHeight : undefined,
+            bottom: direction === "up" ? -cardHeight : undefined,
+            left: direction === "right" ? -cardWidth : undefined,
+            right: direction === "left" ? -cardWidth : undefined,
+            animation: `${scrollKey} ${scrollDuration}s linear forwards`,
+            outline: debug ? "1px dashed lime" : "none"
           }}
+          onAnimationEnd={() => handleAnimationEnd(card.id)}
         >
           <div
             style={{
-              transform: direction === "down" || direction === "left" ? "rotate(180deg)" : "none"
+              transform:
+                direction === "down" || direction === "left"
+                  ? "rotate(180deg)"
+                  : "none"
             }}
           >
             <PostCard
@@ -73,37 +89,37 @@ const ScrollingLane = ({ x, y, length, direction = "up", getNextPost, cardWidth,
       <style jsx>{`
         @keyframes scroll-up {
           from {
-            transform: translateY(100%);
+            transform: translateY(0);
           }
           to {
-            transform: translateY(-100%);
+            transform: translateY(-${length + cardHeight}px);
           }
         }
 
         @keyframes scroll-down {
           from {
-            transform: translateY(-100%);
+            transform: translateY(0);
           }
           to {
-            transform: translateY(100%);
+            transform: translateY(${length + cardHeight}px);
           }
         }
 
         @keyframes scroll-left {
           from {
-            transform: translateX(100%);
+            transform: translateX(0);
           }
           to {
-            transform: translateX(-100%);
+            transform: translateX(-${length + cardWidth}px);
           }
         }
 
         @keyframes scroll-right {
           from {
-            transform: translateX(-100%);
+            transform: translateX(0);
           }
           to {
-            transform: translateX(100%);
+            transform: translateX(${length + cardWidth}px);
           }
         }
       `}</style>
