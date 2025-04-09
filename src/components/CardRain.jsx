@@ -37,15 +37,11 @@ const CardRain = ({ posts }) => {
   const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const res = await fetch("/api/getAcceptedPosts");
-      const newPosts = await res.json();
-      setPosts(newPosts); // or update the queue directly if internal
+    const handleKey = (e) => {
+      if (e.key === "~") setShowControls((prev) => !prev);
     };
-  
-    fetchPosts(); // Initial load
-    const interval = setInterval(fetchPosts, 10000); // Refresh every 10s
-    return () => clearInterval(interval);
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
   }, []);
 
   useEffect(() => {
