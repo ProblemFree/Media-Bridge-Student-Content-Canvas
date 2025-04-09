@@ -15,8 +15,10 @@ const LANE_SPACING = 30;
 const USABLE_WIDTH = CONTAINER_WIDTH - BANNER_MARGIN * 2;
 const LANE_WIDTH = CARD_WIDTH;
 const NUM_LANES = Math.floor((USABLE_WIDTH + LANE_SPACING) / (LANE_WIDTH + LANE_SPACING));
+const TOTAL_LANE_WIDTH = NUM_LANES * LANE_WIDTH + (NUM_LANES - 1) * LANE_SPACING;
+const LANE_OFFSET = (CONTAINER_WIDTH - TOTAL_LANE_WIDTH) / 2;
 const LANE_POSITIONS = Array.from({ length: NUM_LANES }, (_, i) =>
-  BANNER_MARGIN + i * (LANE_WIDTH + LANE_SPACING)
+  LANE_OFFSET + i * (LANE_WIDTH + LANE_SPACING)
 );
 
 function shufflePosts(posts) {
@@ -29,7 +31,6 @@ function shufflePosts(posts) {
 }
 
 const CardRain = ({ posts }) => {
-  const [activeCards, setActiveCards] = useState([]);
   const postQueue = useRef([]);
   const seenPosts = useRef(new Set());
   const newPostIds = useRef(new Set());
@@ -77,7 +78,7 @@ const CardRain = ({ posts }) => {
           getNextPost={getNextPost}
           cardWidth={CARD_WIDTH}
           cardHeight={CARD_HEIGHT}
-          spacing={15}
+          spacing={12}
         />
       ))}
     </Box>
