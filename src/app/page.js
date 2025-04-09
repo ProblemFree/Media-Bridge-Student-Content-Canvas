@@ -10,6 +10,8 @@ import {
   Typography,
   Paper,
 } from "@mui/material";
+import FeedbackPromptModal from "../components/FeedbackPromptModal";
+const SURVEY_URL = "https://qualtricsxmg3qzt79d8.qualtrics.com/jfe/form/SV_80OCLT3kLlxlNd4"; // replace with your link
 
 export default function Home() {
   const [image, setImage] = useState(null);          // selected file
@@ -18,6 +20,8 @@ export default function Home() {
   const [userId, setUserId] = useState(null);        // pulled from localStorage
   const [showModal, setShowModal] = useState(true);  // modal toggle
   const [hasMounted, setHasMounted] = useState(false); // hydration fix
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false); // remember if user accepted modal or not in session
+
 
   // Run once on mount to check localStorage for previously verified session
   useEffect(() => {
@@ -79,6 +83,7 @@ export default function Home() {
         alert("Your submission has been uploaded!");
         setImage(null);
         setMessage("");
+        setShowFeedbackPrompt(true); // <-- Trigger Feedback modal
       } else {
         alert("Submission failed: " + (result.error || "unknown error"));
       }
@@ -198,7 +203,14 @@ export default function Home() {
             userId={userId || "anon"}
           />
         </Box>
+        
       )}
+      <FeedbackPromptModal
+        open={showFeedbackPrompt}
+        onClose={() => setShowFeedbackPrompt(false)}
+        onConfirm={() => setShowFeedbackPrompt(false)}
+        surveyUrl={SURVEY_URL}
+      />
     </Box>
   );
 }
