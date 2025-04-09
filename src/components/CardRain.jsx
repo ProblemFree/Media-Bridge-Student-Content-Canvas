@@ -1,4 +1,3 @@
-// CardRain.jsx
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
@@ -9,17 +8,15 @@ const CONTAINER_WIDTH = 3072;
 const CONTAINER_HEIGHT = 1280;
 const CARD_WIDTH = 350;
 const CARD_HEIGHT = 350;
-const BANNER_MARGIN = 360;
 const LANE_SPACING = 30;
+const BANNER_MARGIN = 360;
 
 const USABLE_WIDTH = CONTAINER_WIDTH - BANNER_MARGIN * 2;
 const LANE_WIDTH = CARD_WIDTH;
 const NUM_LANES = Math.floor((USABLE_WIDTH + LANE_SPACING) / (LANE_WIDTH + LANE_SPACING));
-const TOTAL_LANE_WIDTH = NUM_LANES * LANE_WIDTH + (NUM_LANES - 1) * LANE_SPACING;
-const LANE_OFFSET = (CONTAINER_WIDTH - TOTAL_LANE_WIDTH) / 2;
-const LANE_POSITIONS = Array.from({ length: NUM_LANES }, (_, i) =>
-  LANE_OFFSET + i * (LANE_WIDTH + LANE_SPACING)
-);
+const START_X = BANNER_MARGIN + (USABLE_WIDTH - (NUM_LANES * LANE_WIDTH + (NUM_LANES - 1) * LANE_SPACING)) / 2;
+
+const getLaneX = (index) => START_X + index * (LANE_WIDTH + LANE_SPACING);
 
 function shufflePosts(posts) {
   const array = posts.slice();
@@ -36,13 +33,15 @@ const CardRain = ({ posts }) => {
   const newPostIds = useRef(new Set());
 
   useEffect(() => {
-    const newPosts = posts.filter((p) => !seenPosts.current.has(p.id));
-    newPosts.forEach((p) => seenPosts.current.add(p.id));
-    newPosts.forEach((p) => newPostIds.current.add(p.id));
+    const newPosts = posts.filter(p => !seenPosts.current.has(p.id));
+    newPosts.forEach(p => {
+      seenPosts.current.add(p.id);
+      newPostIds.current.add(p.id);
+    });
 
     const allPosts = posts.slice();
     const newShuffled = shufflePosts(newPosts);
-    const recycled = shufflePosts(allPosts.filter((p) => !newPosts.includes(p)));
+    const recycled = shufflePosts(allPosts.filter(p => !newPosts.includes(p)));
 
     postQueue.current = [...newShuffled, ...recycled];
   }, [posts]);
@@ -51,9 +50,10 @@ const CardRain = ({ posts }) => {
     const post = postQueue.current.shift();
     if (!post) return null;
     postQueue.current.push(post);
-    const isNew = newPostIds.current.has(post.id);
-    if (isNew) newPostIds.current.delete(post.id);
-    return { ...post, isNew };
+    return {
+      ...post,
+      isNew: newPostIds.current.delete(post.id)
+    };
   };
 
   return (
@@ -65,20 +65,19 @@ const CardRain = ({ posts }) => {
         top: 0,
         left: 0,
         zIndex: 2,
-        pointerEvents: "none",
+        pointerEvents: "none"
       }}
     >
-      {LANE_POSITIONS.map((x, index) => (
+      {Array.from({ length: NUM_LANES }, (_, i) => (
         <ScrollingLane
-          key={index}
-          x={x}
+          key={i}
+          x={getLaneX(i)}
           y={0}
           length={CONTAINER_HEIGHT}
-          direction={index % 2 === 0 ? "up" : "down"}
+          direction={i % 2 === 0 ? "up" : "down"}
           getNextPost={getNextPost}
           cardWidth={CARD_WIDTH}
           cardHeight={CARD_HEIGHT}
-          spacing={12}
         />
       ))}
     </Box>
