@@ -53,7 +53,7 @@ const CardRain = () => {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const res = await fetch("/api/getAcceptedPosts");
+        const res = await fetch("/api/acceptedPosts");
         const data = await res.json();
         if (Array.isArray(data)) {
           latestAccepted.current = data;
