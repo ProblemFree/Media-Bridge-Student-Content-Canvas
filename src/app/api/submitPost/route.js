@@ -43,7 +43,7 @@ export async function POST(req) {
       fileUrl,
       fileName,
       postType,
-      accepted: true, //change to false if we want to moderate content before it goes on the feed.
+      accepted: false, //change to false if we want to moderate content before it goes on the feed.
       timestamp: new Date(),
     });
 

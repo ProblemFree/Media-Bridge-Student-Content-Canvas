@@ -55,8 +55,9 @@ const CardRain = () => {
       try {
         const res = await fetch("/api/acceptedPosts");
         const data = await res.json();
-        if (Array.isArray(data)) {
-          latestAccepted.current = data;
+        const posts = data?.posts || data; // handle both structures
+        if (Array.isArray(posts)) {
+          latestAccepted.current = posts;
           hydrateQueue();
         }
       } catch (error) {
@@ -65,7 +66,7 @@ const CardRain = () => {
     };
 
     fetchPosts(); // Initial load
-    const interval = setInterval(fetchPosts, 10000);
+    const interval = setInterval(fetchPosts, 10000); // Poll every 10s
     return () => clearInterval(interval);
   }, []);
 

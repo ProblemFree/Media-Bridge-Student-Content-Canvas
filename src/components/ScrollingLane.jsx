@@ -20,10 +20,15 @@ const ScrollingLane = ({
 }) => {
   const [cards, setCards] = useState([]);
   const cardId = useRef(0);
+  const getNextPostRef = useRef(getNextPost);
+
+  useEffect(() => {
+    getNextPostRef.current = getNextPost;
+  }, [getNextPost]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const post = getNextPost();
+      const post = getNextPostRef.current?.();
       if (!post) return;
 
       const id = cardId.current++;
@@ -31,7 +36,7 @@ const ScrollingLane = ({
     }, spawnInterval);
 
     return () => clearInterval(interval);
-  }, [getNextPost, spawnInterval]);
+  }, [spawnInterval]);
 
   const handleAnimationEnd = (id) => {
     setCards((prev) => prev.filter((card) => card.id !== id));
@@ -59,9 +64,8 @@ const ScrollingLane = ({
             position: "absolute",
             width: `${cardWidth}px`,
             height: `${cardHeight}px`,
-            top: direction === "down" ? -cardHeight : undefined,
-            bottom: direction === "up" ? -cardHeight : undefined,
-            left: direction === "right" ? -cardWidth : undefined,
+            top: direction === "up" ? length : direction === "down" ? -cardHeight : 0,
+            left: direction === "right" ? -cardWidth : 0,
             right: direction === "left" ? -cardWidth : undefined,
             animation: `${scrollKey} ${scrollDuration}s linear forwards`,
             outline: debug ? "1px dashed lime" : "none"
