@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Slider, Typography } from "@mui/material";
 import ScrollingLane from "./ScrollingLane";
 
@@ -9,6 +9,7 @@ const CONTAINER_HEIGHT = 1280;
 const CARD_WIDTH = 350;
 const CARD_HEIGHT = 350;
 const LANE_SPACING = 30;
+const CARD_SPACING = 12;
 const BANNER_MARGIN = 360;
 const DEBUG = false;
 
@@ -28,7 +29,7 @@ function shufflePosts(posts) {
 
 const CardRain = () => {
   const [scrollDuration, setScrollDuration] = useState(20);
-  const [spawnInterval, setSpawnInterval] = useState(3000);
+  const [spawnInterval, setSpawnInterval] = useState(0); // will be auto-calculated
   const [showControls, setShowControls] = useState(false);
 
   const postQueue = useRef([]);
@@ -50,12 +51,13 @@ const CardRain = () => {
     postQueue.current = [...newShuffled, ...recycled];
   };
 
+  // Fetch posts every 10 seconds
   useEffect(() => {
     const fetchPosts = async () => {
       try {
         const res = await fetch("/api/acceptedPosts");
         const data = await res.json();
-        const posts = data?.posts || data; // handle both structures
+        const posts = data?.posts || data;
         if (Array.isArray(posts)) {
           latestAccepted.current = posts;
           hydrateQueue();
@@ -65,12 +67,20 @@ const CardRain = () => {
       }
     };
 
-    fetchPosts(); // Initial load
-    const interval = setInterval(fetchPosts, 10000); // Poll every 10s
+    fetchPosts();
+    const interval = setInterval(fetchPosts, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const getNextPost = () => {
+  // Calculate safe spawn interval based on speed
+  useEffect(() => {
+    const pixelsPerSecond = CONTAINER_HEIGHT / scrollDuration;
+    const secondsPerCard = (CARD_HEIGHT + CARD_SPACING) / pixelsPerSecond;
+    setSpawnInterval(secondsPerCard * 1000);
+  }, [scrollDuration]);
+
+  // Provide next post for ScrollingLane
+  const getNextPost = useCallback(() => {
     const post = postQueue.current.shift();
     if (!post) return null;
     postQueue.current.push(post);
@@ -78,11 +88,14 @@ const CardRain = () => {
       ...post,
       isNew: newPostIds.current.delete(post.id)
     };
-  };
+  }, []);
 
+  // Toggle live controls
   useEffect(() => {
     const handleKey = (e) => {
-      if (e.key === "~") setShowControls(prev => !prev);
+      if (e.key === "`" || e.key === "~") {
+        setShowControls(prev => !prev);
+      }
     };
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
@@ -138,14 +151,6 @@ const CardRain = () => {
             step={1}
             value={scrollDuration}
             onChange={(e, val) => setScrollDuration(val)}
-          />
-          <Typography variant="body2">Spawn Interval (ms): {spawnInterval}</Typography>
-          <Slider
-            min={500}
-            max={10000}
-            step={100}
-            value={spawnInterval}
-            onChange={(e, val) => setSpawnInterval(val)}
           />
         </Box>
       )}

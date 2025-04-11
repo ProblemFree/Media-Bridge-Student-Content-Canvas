@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -14,21 +13,17 @@ const ScrollingLane = ({
   getNextPost,
   cardWidth,
   cardHeight,
-  scrollDuration = 30,
-  spawnInterval = 6000,
+  scrollDuration = 20,
+  spawnInterval = 3000,
   debug = false
 }) => {
   const [cards, setCards] = useState([]);
   const cardId = useRef(0);
-  const getNextPostRef = useRef(getNextPost);
 
-  useEffect(() => {
-    getNextPostRef.current = getNextPost;
-  }, [getNextPost]);
-
+  // Spawn cards at interval
   useEffect(() => {
     const interval = setInterval(() => {
-      const post = getNextPostRef.current?.();
+      const post = getNextPost();
       if (!post) return;
 
       const id = cardId.current++;
@@ -36,8 +31,9 @@ const ScrollingLane = ({
     }, spawnInterval);
 
     return () => clearInterval(interval);
-  }, [spawnInterval]);
+  }, [getNextPost, spawnInterval]);
 
+  // Remove cards after animation ends
   const handleAnimationEnd = (id) => {
     setCards((prev) => prev.filter((card) => card.id !== id));
   };
@@ -64,8 +60,9 @@ const ScrollingLane = ({
             position: "absolute",
             width: `${cardWidth}px`,
             height: `${cardHeight}px`,
-            top: direction === "up" ? length : direction === "down" ? -cardHeight : 0,
-            left: direction === "right" ? -cardWidth : 0,
+            top: direction === "down" ? -cardHeight : undefined,
+            bottom: direction === "up" ? -cardHeight : undefined,
+            left: direction === "right" ? -cardWidth : undefined,
             right: direction === "left" ? -cardWidth : undefined,
             animation: `${scrollKey} ${scrollDuration}s linear forwards`,
             outline: debug ? "1px dashed lime" : "none"
