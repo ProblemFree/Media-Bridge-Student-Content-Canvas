@@ -15,7 +15,7 @@ const ScrollingLane = ({
   cardWidth,
   cardHeight,
   scrollDuration = 30,
-  spawnInterval = 5000,
+  spawnInterval = 6000,
   debug = false
 }) => {
   const [cards, setCards] = useState([]);
